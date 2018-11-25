@@ -18,7 +18,15 @@ My research focuses on bridging [multiparty computation](https://en.wikipedia.or
 - fast implementations of big-integer arithmetic, and its formal verification of correctness
 - "constant-time" implementations
 
+##### Upcoming Preprints
+*Fast Secure Comparison for Medium-Sized Integers and Its Application in Binarized Neural Networks*, accepted at __RSA Conference 2019, Cryptographer's Track__, together with Mark Abspoel, Berry Schoenmakers and Niels de Vreede.
+ - We expect to upload the preprint by December
+
 ##### Recent Preprints
+[*Average Point Pursuit using the Greedy Algorithm: Theory and Applications*](https://arxiv.org/abs/1811.07734) together with Andrey Bernstein (National Renewable Energy Laboratory, Golden, CO, USA)
+
+ - This work is related to the work I did at EPFL on the topic of control of electrical grids in the renewable energy era
+
 [*New Protocols for Secure Linear Algebra: Pivoting-Free Elimination and Fast Block-Recursive Matrix Decomposition*](https://eprint.iacr.org/2018/703) together with Niels de Vreede
 
 ##### Recent Organizational Activities
