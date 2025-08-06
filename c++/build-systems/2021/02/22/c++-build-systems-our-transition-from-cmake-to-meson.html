@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>C++ build systems: our transition from CMake to Meson | Roseman Labs’ Tech Blog</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="C++ build systems: our transition from CMake to Meson" />
+<meta name="author" content="Niek J. Bouman" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="We develop our main product, Cranmera MPC engine, in C++20. (Why we chose Modern C++ and not, for example, Rust, is a topic for yet another blogpost.) Because C++ doesn’t come with a default build system like Rust’s Cargo, it means that it is up to the programmer to choose an appropriate build system. (Strictly speaking, I should say ‘build system generator’, as Ninja is the actual build system that we use, but let’s not get into this kind of nitpicking here.) This choice is of course not just a disadvantage; in that you actually have a choice. As CMake is quite popular in the C++ community these days, I had been using CMake for several years now. (And before that, in a more distant past, say around 2006, I used GNU’s Automake.) Anyway, in the beginning, I was satisfied with my choice for CMake, although I never had the feeling that I really mastered CMake." />
+<meta property="og:description" content="We develop our main product, Cranmera MPC engine, in C++20. (Why we chose Modern C++ and not, for example, Rust, is a topic for yet another blogpost.) Because C++ doesn’t come with a default build system like Rust’s Cargo, it means that it is up to the programmer to choose an appropriate build system. (Strictly speaking, I should say ‘build system generator’, as Ninja is the actual build system that we use, but let’s not get into this kind of nitpicking here.) This choice is of course not just a disadvantage; in that you actually have a choice. As CMake is quite popular in the C++ community these days, I had been using CMake for several years now. (And before that, in a more distant past, say around 2006, I used GNU’s Automake.) Anyway, in the beginning, I was satisfied with my choice for CMake, although I never had the feeling that I really mastered CMake." />
+<link rel="canonical" href="/c++/build-systems/2021/02/22/c++-build-systems-our-transition-from-cmake-to-meson.html" />
+<meta property="og:url" content="/c++/build-systems/2021/02/22/c++-build-systems-our-transition-from-cmake-to-meson.html" />
+<meta property="og:site_name" content="Roseman Labs’ Tech Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-02-22T08:00:00+01:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="C++ build systems: our transition from CMake to Meson" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Niek J. Bouman"},"dateModified":"2021-02-22T08:00:00+01:00","datePublished":"2021-02-22T08:00:00+01:00","description":"We develop our main product, Cranmera MPC engine, in C++20. (Why we chose Modern C++ and not, for example, Rust, is a topic for yet another blogpost.) Because C++ doesn’t come with a default build system like Rust’s Cargo, it means that it is up to the programmer to choose an appropriate build system. (Strictly speaking, I should say ‘build system generator’, as Ninja is the actual build system that we use, but let’s not get into this kind of nitpicking here.) This choice is of course not just a disadvantage; in that you actually have a choice. As CMake is quite popular in the C++ community these days, I had been using CMake for several years now. (And before that, in a more distant past, say around 2006, I used GNU’s Automake.) Anyway, in the beginning, I was satisfied with my choice for CMake, although I never had the feeling that I really mastered CMake.","headline":"C++ build systems: our transition from CMake to Meson","mainEntityOfPage":{"@type":"WebPage","@id":"/c++/build-systems/2021/02/22/c++-build-systems-our-transition-from-cmake-to-meson.html"},"url":"/c++/build-systems/2021/02/22/c++-build-systems-our-transition-from-cmake-to-meson.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Roseman Labs&apos; Tech Blog" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Roseman Labs&#39; Tech Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">C++ build systems: our transition from CMake to Meson</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2021-02-22T08:00:00+01:00" itemprop="datePublished">Feb 22, 2021
+      </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Niek J. Bouman</span></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>We develop our main product, Cranmera MPC engine, in C++20. (Why we chose Modern C++ and not, for example, Rust, is a topic for yet another blogpost.)
+Because C++ doesn’t come with a default build system like Rust’s Cargo, it means that it is up to the programmer to choose an appropriate build system.
+(Strictly speaking, I should say ‘build system generator’, as Ninja is the actual build system that we use, but let’s not get into this kind of nitpicking here.)
+This choice is of course not just a disadvantage; in that you actually have a choice. As CMake is quite popular in the C++ community these days, I had been using CMake for several years now. (And before that, in a more distant past, say around 2006, I used GNU’s Automake.) Anyway, in the beginning, I was satisfied with my choice for CMake, although I never had the feeling that I really mastered CMake.</p>
+
+<p>Until about 1.5 years ago, as an academic scientist, I mainly wrote some scientific code; the build system played a very unimportant role. I liked to view the build system as a part that you ‘mess around with it until it works, and then keep your hands off it’, which served my purpose well enough at the time. Now that I have the role of CTO in a privacy-technology company, I bear much more responsibility for the quality and robustness of the developed codebase.
+Even before you have to choose a build system, there is the choice of the programming language for a new project. In a nutshell: choose the right tool given the problem. For us, that choice happens to be C++, which gives us ultimate control. (There is a price to pay for this level of control, namely that you become responsible for managing all resources within the program, and for protecting yourself against the footguns that any language with low-level features happily offers you. The purpose of having all that control is that it should ultimately pay off in terms of better performance: smaller memory footprint, faster code, etc., though it comes with the price of extra cognitive load during development.)
+I want to have that ultimate control also over my build system, but as I already indicated above, with CMake it never felt like having that level of control.</p>
+
+<p>Recently, we have migrated from CMake to Meson, and in the rest of this blogpost I want to tell the story of how we got to this decision and what we got out of it.
+The main reason for migrating our build system, is that I wanted to prevent the scenario where some parts of the codebase, of which you actually know that those are a bit messy (in this case, our CMake scripts), suddenly start playing up at a very bad moment, for example just before the deadline of shipping a new product.
+If you have some engineering experience, you will agree that the more subtle kind of technical problems like to manifest themselves in atypical situations or corner cases. What I mean, in terms of a build system, is that you won’t notice the actual quality of your build system scripts until you start doing special things, like porting to other OSes, architectures and cross-compiling. At that point you will be penalized for every ‘hack’, where you did not follow the idiom prescribed by the makers of the (build) system. And where are those hacks actually located? In your own build scripts, or in the “FindXXX.cmake” scripts you found somewhere on GitHub?</p>
+
+<p>Then there is the topic of “Modern CMake”, caused by the paradigm shift that took place a few years ago in CMake, due to which we now have the “old” (read: “wrong”) directory-based style, versus the “modern” (and recommended) target-based style. “Modern CMake” is probably coined to make us think of “Modern C++”, the latter being the novel style of C++ that encourages the use of updated and less error-prone language and standard-library constructs.
+With respect to the language C++, I value the backwards compatibility guarantees that C++ offers, and I agree that those backwards-compatibility benefits make up for the ugly parts of its syntax. With respect to a build system, however, I am not convinced of the value of such backwards compatibility, and in my opinion, a clean syntax and well-thought-out structure is much to be preferred.</p>
+
+<p>By the way, googling for “modern CMake” yields quite many blogposts in which authors explain the intricacies of Modern CMake. One could view the abundance of such stories as a positive thing, though I can’t help regarding it as an indicator for the poor style of CMake’s own documentation. Compared to that, Meson’s documentation, together with its design, simply feels ‘right’.
+Before deciding to switch our build system, I have tried to convert our CMake scripts to the “Modern CMake” idiom and polish them up. After putting some work in it, meaning reading CMake docs and changing scripts, I was still not satisfied with the result. Probably it was my own fault; I still did not yet fully understand CMake’s new idioms, and as a consequence our build system setup still felt brittle. On the other hand, given that our build system requirements are not that complex, why should I invest more time to become an expert in a system (CMake) that I anyway appreciate less the more I read about it… What about alternatives?</p>
+
+<p>Before choosing Meson, I also considered build2 by Boris Kolpackov / Code Synthesis. Build2 is famous for being one of the earliest build systems to support C++20 Modules, and based on its descriptions and the author’s talks (e.g. at CPPCon) this system seems to be well-designed, more advanced than most other build systems, and to have a lot of potential. However, given my limited amount of time, I was unable to quickly figure out from its documentation how I could accomplish common tasks, like linking with libs that are not included in the related cppget.org repository, such as Boost. I think improving documentation-for-the-impatient is something where Build2 could improve. BTW, I am curious to see how Meson’s approach to dealing with C++20 modules will develop; we do not yet use them in our project.
+I do not want claim that our build system requirements are very complex, though we do need some special setup:</p>
+
+<ul>
+  <li>we need multi-compiler support (Clang for debug and GCC for release builds);</li>
+  <li>depending on the use of Address Sanitizer, or Valgrind, we need differently compiled versions of some Boost libs (Boost.Context and Boost.Fiber); and</li>
+  <li>we use a some generated code, which originates from Cap’n Proto, a protobuf-like library for object serialization.</li>
+</ul>
+
+<p>With Meson, all these were easy to accomplish (for the third I use a little helper Python script), and, maybe even more importantly, in such a way that I fully understand what is going on under the hood.</p>
+
+<p>Furthermore, some personal favourites about Meson are:</p>
+
+<ul>
+  <li>the concept of a dependency, which lets you bundle libraries with include paths, and the different ways to obtain such dependency (automatic vs. manually)</li>
+  <li>one does not have to specify header files in the executable target to make IDEs happy</li>
+  <li>integration with pkg-config and CMake, to locate system-installed libs</li>
+  <li>easy-to-manage configuration options</li>
+  <li>out-of-the-box support common stuff (sanitizer support, coverage builds, stripping binaries, etc.)</li>
+  <li>easy-to-extend while maintaining transparency</li>
+  <li>parallel unit tests</li>
+</ul>
+
+<p>A key benefit of a good and transparent build system is that it will save you time, and that it makes it much easier to use helper tools that will improve code quality, like Clang’s static analyzer, Address Sanitizer, coverage builds, etcetera. We are very happy with Meson, thanks Jussi Pakkanen!</p>
+
+  </div><a class="u-url" href="/c++/build-systems/2021/02/22/c++-build-systems-our-transition-from-cmake-to-meson.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Roseman Labs&#39; Tech Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Roseman Labs&#39; Tech Blog</li><li><a class="u-email" href="mailto:info@rosemanlabs.com">info@rosemanlabs.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>The technology blog of Roseman Labs, where we post various technical matter, trip reports, etcetera.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
